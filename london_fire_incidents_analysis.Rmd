@@ -1,0 +1,70 @@
+---
+title: "London fires analysis"
+output: NA
+---
+
+```{r setup}
+library(tidyverse)
+library(gs)
+library(lubridate)
+```
+
+```{r}
+london_fire_incidents <- 
+  read_csv("incidents.csv") %>% 
+  rename(call_date = DateOfCall)
+
+london_fire_incidents
+```
+
+```{r}
+london_fire_incidents %>% 
+  group_by(call_date) %>% 
+  summarise(n_calls = n()) %>%
+  mutate(year_call = year(call_date),
+         yday_call = yday(call_date),
+         day_month = make_date(year = 1970,
+                               month = month(call_date), 
+                               day = day(call_date))) %>%
+  ggplot(aes(x = day_month, 
+             y = n_calls,
+             color = year_call)) +
+  geom_line()
+```
+
+```{r}
+on_guy_fawkes <- only_occur(in_month("Nov"), on_mday(5))
+on_guy_fawkes_weekend <- only_occur(on_guy_fawkes, on_weekend())
+on_christmas_day <- only_occur(in_month("Dec"), on_mday(25))
+on_new_years_day <- on_yday(1)
+on_us_independence_day <- only_occur(on_mday(5), in_month("Jul"))
+
+
+on_guy_fawkes
+```
+
+
+```{r}
+london_fire_incidents %>% 
+  group_by(call_date) %>% 
+  summarise(n_calls = n()) %>% 
+  mutate(calendar_event = case_when(
+    happen(on_guy_fawkes_weekend, call_date) ~ "Guy Fawkes weekend",
+    happen(on_guy_fawkes, call_date) ~ "Guy Fawkes",
+    happen(on_christmas_day, call_date) ~ "Christmas Day",
+    happen(on_new_years_day, call_date) ~ "New Year's Day",
+    happen(on_easter_weekend(), call_date) ~ "Easter Weekend",
+    happen(on_us_independence_day, call_date) ~ "US Independence Day",
+    happen(on_weekend(), call_date) ~ "Weekend",
+    happen(on_weekday(), call_date) ~ "Weekday",
+    TRUE ~ "None"
+  )) %>% 
+  group_by(calendar_event) %>% 
+  summarise(mean_calls = mean(n_calls)) %>% 
+  mutate(calendar_event = fct_reorder(calendar_event, mean_calls, sum)) %>% 
+  ggplot(aes(x = calendar_event, 
+             y = mean_calls)) +
+  geom_col() +
+  coord_flip()
+```
+

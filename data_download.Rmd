@@ -1,0 +1,123 @@
+---
+title: "Data download"
+output: NA
+---
+
+
+
+```{r setup}
+library(tidyverse)
+library(utils)
+library(fs)
+library(readxl)
+```
+
+```{r eval=FALSE, include=FALSE}
+# url <- "https://data.london.gov.uk/download/london-fire-brigade-incident-records/3983f70b-66de-4522-a1ec-b75556d1146b/LFB%20Incident%20data%20from%20January%202009%20to%20December%202012.zip"
+# 
+# download.file(url, destfile = "2009-2012.zip")
+```
+
+```{r}
+# dir_ls(glob = "*.zip") %>% 
+#   tibble(path = .) %>% 
+#   mutate(file = map_chr(path, unzip)) %>% 
+#   slice(1) %>% 
+#   pull()
+```
+
+
+```{r}
+coltypes <- c(
+  "text",
+  "date",
+  "numeric",
+  "date",
+  "numeric",
+  "text",
+  "text",
+  "text",
+  "text",
+  "text",
+  "text",
+  "text",
+  "text",
+  "text",
+  "text",
+  "text",
+  "text",
+  "text",
+  "text",
+  "text",
+  "text",
+  "text",
+  "numeric",
+  "text",
+  "text",
+  "text",
+  "text",
+  "text",
+  "text",
+  "numeric",
+  "numeric"
+)
+```
+
+```{r}
+dir_ls(glob = "*.xlsx")
+```
+
+
+```{r message=FALSE, warning=FALSE}
+df <- 
+  dir_ls(glob = "*.xlsx") %>% 
+  data_frame(dir = .) %>% 
+  #slice(2) %>% 
+  mutate(df = map(dir, suppressWarnings(read_excel), col_types = coltypes, na = "NULL"))
+
+df
+```
+
+```{r}
+incidents <-
+  df %>% 
+  select(df) %>% 
+  unnest(df)
+
+incidents
+```
+
+```{r}
+incidents %>% 
+  summarise(min_date = min(DateOfCall),
+            max_date = max(DateOfCall))
+```
+
+
+```{r}
+write_csv(incidents, path = "incidents.csv")
+```
+
+```{r}
+sapply(incidents, typeof)
+```
+
+
+```{r}
+incidents %>% 
+  group_by(DateOfCall) %>% 
+  summarise(n = n()) %>% 
+  arrange(n) %>% 
+  identity()
+  #ggplot(aes(x = DateOfCall, y = n) ) + 
+  #geom_col()
+```
+
+
+```{r}
+df %>% 
+  select(df) %>% 
+  slice(1) %>% 
+  unnest(df)
+```
+
